@@ -10,7 +10,11 @@ from sklearn.preprocessing import OneHotEncoder, LabelEncoder
 import time
 from selenium.common.exceptions import TimeoutException, NoSuchElementException, ElementNotInteractableException, WebDriverException, NoSuchWindowException
 from selenium.webdriver.common.action_chains import ActionChains
-
+import os
+import pandas as pd
+from datetime import datetime
+from database_operations import job_exists, save_job_to_db
+from excell_operation import save_unsuccessful_job_to_excel
 from jobDetailValidation import validate_job_details
 
 class JobDataEncoder:
@@ -85,6 +89,7 @@ class JobDataEncoder:
 
     def register_employer_account(self, registration_data):
         try:
+
             self.driver.get(self.login_url)
             time.sleep(2)  # Wait for the page to load
 
@@ -223,42 +228,17 @@ class JobDataEncoder:
         Parameters:
         job_details (dict): A dictionary containing job details.
         """
-        job_details = {
-            "job_title": "Host for TikTok",
-            "job_description": "We at Afriwork (Freelance Ethiopia) are looking for a TikTok Host who is energetic and charismatic individual to join our team. The ideal candidate will be the face of our YouTube and TikTok channels, responsible for engaging with our audience, presenting content in an entertaining and informative manner, and contributing to the overall growth of our channels.\n\nResponsibilities:\n\n- Host and present various types of content including tutorials, reviews, interviews, vlogs, and live streams\n- Interact with viewers through comments, live chats, and social media\n- Collaborate with the content team to create, refine, and deliver scripts\n- Deliver engaging contents\n\nPlease send your CV and portfolio. And please submit a professional headshot with a clean background.",
-            "application_deadline": "June 27th, 2024",
-            "job_sector": ["Communications, Marketing, and Sales"],
-            "job_type": ["Contract"],
-            "skills": [],
-            "job_apply_type": "external",
-            "job_apply_url": "https://t.me/afriworkapplicantbot?start=7803d51d-52d4-4ec9-b109-16ab72dff0c4",
-            "job_apply_email": "",
-            "salary_type": "",
-            "min_salary": "",
-            "max_salary": "",
-            "salary_currency": "",
-            "salary_position": "",
-            "salary_separator": "",
-            "salary_decimals": "",
-            "experience": "Fresh",
-            "gender": "Female",
-            "qualifications": [],
-            "career_level": "Entry",
-            "country": "Ethiopia",
-            "state": "Addis Ababa",
-            "city": "Addis Ababa",
-            "postal_code": "",
-            "full_address": "",
-            "latitude": "",
-            "longitude": "",
-            "zoom": ""
-        }
-
-        # Wait for the form to be present
         validation_errors = validate_job_details(job_details)
         if validation_errors:
-            print(f"Job details validation failed: {', '.join(validation_errors)}")
-            return
+            save_unsuccessful_job_to_excel(job_details)
+            error_message = f"Job details validation failed: {', '.join(validation_errors)}"
+            print(error_message)
+            return {"status": "error", "message": error_message}
+        # Check if job already exists
+        if job_exists(job_details.get('job_apply_url'), job_details.get('job_apply_type'), job_details.get('job_apply_email')):
+            error_message = "Job already exists in the database."
+            print(error_message)
+            return {"status": "error", "message": error_message}
 
         try:
             form = WebDriverWait(self.driver, 10).until(
@@ -349,6 +329,7 @@ class JobDataEncoder:
             except Exception as e:
                 print(f"Error selecting job apply type: {e}")
                 all_fields_filled_successfully = False
+
             # Fill in the salary details
             try:
                 salary_min_field = find_element_in_form(By.NAME, 'job_salary')
@@ -406,16 +387,39 @@ class JobDataEncoder:
             if all_fields_filled_successfully:
                 try:
                     submit_button = find_element_in_form(By.CSS_SELECTOR, 'input.jobsearch-employer-profile-submit.jobsearch-postjob-btn')
-                    # submit_button.click()
-                    print("Job form submitted successfully.")
+                    submit_button.click()
+                    time.sleep(5)  # Wait for submission to complete
+
+                    save_job_to_db(job_details)
+                    # Check for a success message or confirmation element
+                    try:
+                        success_message = WebDriverWait(self.driver, 10).until(
+                            EC.presence_of_element_located((By.CSS_SELECTOR, '.success-message'))  # Adjust the selector to match the success message element
+                        )
+                        if success_message:
+                            print("Job form submitted successfully.")
+                            return {"status": "success", "message": "Job form submitted successfully."}
+                    except TimeoutException:
+                        error_message = "Job submission failed. No success message found."
+                        print(error_message)
+                        return {"status": "error", "message": error_message}
                 except Exception as e:
-                    print(f"Error clicking submit button: {e}")
+                    save_unsuccessful_job_to_excel(job_details)
+                    error_message = f"Error clicking submit button: {e}"
+                    print(error_message)
+                    return {"status": "error", "message": error_message}
             else:
-                print("Form was not submitted due to errors in filling fields.")
+                error_message = "Form was not submitted due to errors in filling fields."
+                print(error_message)
+                return {"status": "error", "message": error_message}
 
         except Exception as e:
+            save_unsuccessful_job_to_excel(job_details)
             self.capture_screenshot('fill_form_exception.png')
-            print(f"An error occurred while filling the form: {e}")
+            error_message = f"An error occurred while filling the form: {e}"
+            print(error_message)
+            return {"status": "error", "message": error_message}
+
 
     def one_hot_encode(self, df, columns):
         try:

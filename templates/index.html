@@ -53,6 +53,12 @@
       #result {
         margin-top: 20px;
       }
+      .success {
+        color: green;
+      }
+      .error {
+        color: red;
+      }
     </style>
   </head>
   <body>
@@ -85,8 +91,21 @@
 
           const result = await response.json();
           document.getElementById("loading").style.display = "none";
-          document.getElementById("result").innerHTML =
-            "<pre>" + JSON.stringify(result, null, 2) + "</pre>";
+
+          const resultContainer = document.getElementById("result");
+          resultContainer.innerHTML = "";
+
+          result.forEach((item) => {
+            const div = document.createElement("div");
+            if (item.status === "success") {
+              div.classList.add("success");
+              div.innerHTML = `Job "${item.job_title}" was successfully posted.`;
+            } else {
+              div.classList.add("error");
+              div.innerHTML = `Job "${item.job_title}" failed to post. Error: ${item.message}`;
+            }
+            resultContainer.appendChild(div);
+          });
         });
     </script>
   </body>

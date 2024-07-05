@@ -2,7 +2,7 @@ from openai import OpenAI
 import json
 
 # Initialize OpenAI client
-client = OpenAI(api_key="sk-proj-pSKOFeR5wt1K4twVwaVpT3BlbkFJse8vdvs8gaBkEbqg8nIG")
+client = OpenAI(api_key="sk-proj-zveJlJU6LxCkIfThJLpTT3BlbkFJMcYdPTiDMfFGwj1cmeFu")
 
 def organize_job_information(job_info):
     sectors = [
@@ -224,7 +224,7 @@ def organize_job_information(job_info):
     try:
         # Send request to OpenAI API
         completion = client.chat.completions.create(
-            model="gpt-4",
+            model="gpt-3.5-turbo",
             messages=messages
         )
 

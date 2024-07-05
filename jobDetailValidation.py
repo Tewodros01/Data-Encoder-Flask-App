@@ -1,5 +1,7 @@
+from fuzzywuzzy import process
+
 def validate_job_details(job_details):
-    sectors = [
+    valid_sectors = [
         "Accounting, Finance, and Insurance",
         "Administrative and Secretarial Services",
         "Advertising, Media Journalism, and Public Relations",
@@ -25,7 +27,7 @@ def validate_job_details(job_details):
         "Retail, Wholesale, and Inventory Management"
     ]
 
-    job_types = [
+    valid_job_types = [
         "Commission",
         "Consultancy",
         "Contract",
@@ -40,82 +42,36 @@ def validate_job_details(job_details):
         "Volunteer"
     ]
 
-    apply_types = [
-        "internal",
-        "external",
-        "with_email"
-    ]
+    def get_closest_match(value, valid_values):
+        match, score = process.extractOne(value, valid_values)
+        return match if score >= 80 else None
 
-    experience_levels = [
-        "Fresh",
-        "0-1 Years",
-        "1+ Years",
-        "2+ Years",
-        "3+ Years",
-        "4+ Years",
-        "5+ Years",
-        "6+ Years",
-        "7+ Years",
-        "8 Years +"
-    ]
-
-    gender_options = [
-        "Male",
-        "Female",
-        "Prefer not to say"
-    ]
-
-    qualifications = [
-        "Diploma",
-        "Associate Degree",
-        "MA Degree",
-        "MSc Degree",
-        "BSc Degree",
-        "BA Degree",
-        "PHD",
-        "Doctorate",
-        "Grade 10",
-        "Grade 8",
-        "TVET"
-    ]
-
-    fields_of_study = [
-        "Institute of Technology",
-        "Business and Economics",
-        "Education and Behavioral Studies",
-        "Social Sciences",
-        "Biotechnology",
-        "Peace and Security Study",
-        "Health Sciences",
-        "Humanities, Language Studies, Journalism and Communication",
-        "Law and Governance Studies",
-        "Natural and Computational Sciences",
-        "Performing and Visual Arts",
-        "Veterinary Medicine and Agriculture",
-        "Architecture, Building Construction and City Development"
-    ]
-
-    career_levels = [
-        "Student",
-        "Entry",
-        "Junior Level",
-        "Mid-Level",
-        "Senior-Level",
-        "Executive"
-    ]
-
-    def is_valid_value(value, valid_values):
-        return value in valid_values
-
-    def are_valid_values(values, valid_values):
-        return all(value in valid_values for value in values)
+    def are_valid_values(values, valid_values, field_name):
+        invalid_values = []
+        for value in values:
+            closest_match = get_closest_match(value, valid_values)
+            if not closest_match:
+                invalid_values.append(value)
+            else:
+                print(f"{field_name}: '{value}' was corrected to '{closest_match}'")
+        return invalid_values
 
     errors = []
 
-    if not are_valid_values(job_details['job_sector'], sectors):
-        errors.append("Invalid job sector(s)")
+    # Check job sectors, ensuring that each sector in the list is valid
+    if 'job_sector' in job_details:
+        invalid_sectors = are_valid_values(job_details['job_sector'], valid_sectors, "Job sector")
+        if invalid_sectors:
+            errors.append(f"Invalid job sector(s) found: {invalid_sectors}")
 
-    if not are_valid_values(job_details['job_type'], job_types):
-        errors.append("Invalid job type(s)")
+    # Check job types, ensuring that each type in the list is valid
+    if 'job_type' in job_details:
+        invalid_job_types = are_valid_values(job_details['job_type'], valid_job_types, "Job type")
+        if invalid_job_types:
+            errors.append(f"Invalid job type(s) found: {invalid_job_types}")
 
     return errors
+
+
+
+
