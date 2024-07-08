@@ -6,38 +6,90 @@ from selenium.common.exceptions import NoSuchElementException, TimeoutException,
 import time
 
 from normalize_scraped_job import normalize_job_data
+from ethiojobNormilizer import save_to_excel
 
 predefinedSectors = [
-  "Accounting, Finance, and Insurance",
-  "Administrative and Secretarial Services",
-  "Advertising, Media Journalism and Public Relations",
-  "Agriculture, Forestry, and Environmental Science",
-  "Architecture, Design, and Construction",
-  "Engineering and Technology",
-  "Banking, Investment and Insurance",
-  "Business and Management",
-  "Law, Legal Services, and Public Administration",
-  "Communications, Marketing, and Sales",
-  "Human Resources, Recruitment, and Organizational Development",
-  "Consultancy, Training and Education",
-  "Creative Arts, Event Management and Entertainment",
-  "Hospitality, Tourism, and Customer Service",
-  "Product, Program, and Project Management",
-  "Natural and Social Sciences",
-  "Health and Wellness",
-  "Retail, Wholesale, and Inventory Management",
-  "Logistics, Supply Chain, and Transportation",
-  "Manufacturing and Production",
-  "Quality Assurance, Safety, and Compliance",
-  "Product Development",
-  "Unknown Sector"
-];
+  "Accounting and Finance",
+  "Admin, Secretarial and Clerical",
+  "Agriculture",
+  "Architecture and Construction",
+  "Automotive",
+  "Banking and Insurance",
+  "Business and Administration",
+  "Business Development",
+  "Communications, PR and Journalism",
+  "Consultancy and Training",
+  "Creative Arts",
+  "Customer Service",
+  "Development and Project Management",
+  "Economics",
+  "Education",
+  "Engineering",
+  "Environment and Natural Resource",
+  "Event Management",
+  "Manufacturing",
+  "Health Care",
+  "Hotel and Hospitality",
+  "Human Resource and Recruitment",
+  "Information Technology",
+  "Legal",
+  "Logistics, Transport and Supply Chain",
+  "Management",
+  "Natural Sciences",
+  "Pharmaceutical",
+  "Purchasing and Procurement",
+  "Quality Assurance",
+  "Research and Development",
+  "Retail, Wholesale and Distribution",
+  "Sales and Marketing",
+  "Security",
+  "Social Sciences and Community",
+  "IT, Computer Science and Software Engineering",
+  "Telecommunications",
+  "Warehouse, Supply Chain and Distribution",
+  "Water and Sanitation"
+]
 
 category_urls = [
     "https://ethiojobs.net/jobs?search=Accounting+and+Finance&page=1",
-    # "https://ethiojobs.net/jobs?search=Admin%2C+Secretarial%2C+and+Clerical&page=1",
-    # "https://ethiojobs.net/jobs?search=Water+and+Sanitation&page=1",
-    # "https://ethiojobs.net/jobs?search=Agriculture&page=1"
+    "https://ethiojobs.net/jobs?search=Admin%2C+Secretarial%2C+and+Clerical&page=1",
+    "https://ethiojobs.net/jobs?search=Agriculture&page=1",
+    "https://ethiojobs.net/jobs?search=Architecture+and+Construction&page=1",
+    "https://ethiojobs.net/jobs?search=Automotive&page=1",
+    "https://ethiojobs.net/jobs?search=Banking+and+Insurance&page=1",
+    "https://ethiojobs.net/jobs?search=Business+and+Administration&page=1",
+    "https://ethiojobs.net/jobs?search=Business+Development&page=1",
+    "https://ethiojobs.net/jobs?search=Communications%2C+Media+and+Journalism&page=1",
+    "https://ethiojobs.net/jobs?search=Consultancy+and+Training&page=1",
+    "https://ethiojobs.net/jobs?search=Creative+Arts&page=1",
+    "https://ethiojobs.net/jobs?search=Customer+Service&page=1",
+    "https://ethiojobs.net/jobs?search=Development+and+Project+Management&page=1",
+    "https://ethiojobs.net/jobs?search=Economics&page=1",
+    "https://ethiojobs.net/jobs?search=Education&page=1",
+    "https://ethiojobs.net/jobs?search=Engineering&page=1",
+    "https://ethiojobs.net/jobs?search=Environment+and+Natural+Resource&page=1",
+    "https://ethiojobs.net/jobs?search=Event+Management&page=1",
+    "https://ethiojobs.net/jobs?search=FMCG+and+Manufacturing&page=1",
+    "https://ethiojobs.net/jobs?search=Health+Care&page=1",
+    "https://ethiojobs.net/jobs?search=Hotel+and+Hospitality&page=1",
+    "https://ethiojobs.net/jobs?search=Human+Resource+and+Recruitment&page=1",
+    "https://ethiojobs.net/jobs?search=IT%2C+Computer+Science+and+Software+Engineering&page=1",
+    "https://ethiojobs.net/jobs?search=Legal&page=1",
+    "https://ethiojobs.net/jobs?search=Logistics%2C+Transport+and+Supply+Chain&page=1",
+    "https://ethiojobs.net/jobs?search=Management&page=1",
+    "https://ethiojobs.net/jobs?search=Natural+Sciences&page=1",
+    "https://ethiojobs.net/jobs?search=Pharmaceutical&page=1",
+    "https://ethiojobs.net/jobs?search=Purchasing+and+Procurement&page=1",
+    "https://ethiojobs.net/jobs?search=Quality+Assurance&page=1",
+    "https://ethiojobs.net/jobs?search=Research+and+Development&page=1",
+    "https://ethiojobs.net/jobs?search=Retail%2C+Wholesale+and+Distribution&page=1",
+    "https://ethiojobs.net/jobs?search=Sales+and+Marketing&page=1",
+    "https://ethiojobs.net/jobs?search=Security&page=1",
+    "https://ethiojobs.net/jobs?search=Social+Sciences+and+Community+Service&page=1",
+    "https://ethiojobs.net/jobs?search=Technology&page=1",
+    "https://ethiojobs.net/jobs?search=Telecommunications&page=1",
+    "https://ethiojobs.net/jobs?search=Warehouse%2C+Supply+Chain+and+Distribution&page=1",
+    "https://ethiojobs.net/jobs?search=Water+and+Sanitation&page=1"
 ]
 
 
@@ -190,6 +242,6 @@ def main():
         for job in category["job_listing"]:
             print(category)
             # normalize_job_data(job, category["job_sector"])
-
+    save_to_excel(all_jobs_by_category)
 if __name__ == "__main__":
     main()

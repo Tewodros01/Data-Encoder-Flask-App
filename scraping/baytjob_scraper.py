@@ -8,6 +8,7 @@ from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from webdriver_manager.chrome import ChromeDriverManager
+from urllib.parse import urljoin
 
 # Chrome options setup
 options = Options()
@@ -65,22 +66,22 @@ class SubSector:
 # Function to scrape job details
 def scrape_job_detail(jobDetailUrl, retries=0):
     try:
+        print("Job Detail Url:", jobDetailUrl)
         response = requests.get(jobDetailUrl)
         response.raise_for_status()
         html = response.text
         soup = BeautifulSoup(html, 'html.parser')
-        print("Respons",soup)
 
         job = Job(
             title=soup.select_one("#job_title").text.strip() if soup.select_one("#job_title") else None,
-            company=soup.select_one(".media-list .is-black").text.strip() if soup.select_one(".media-list .is-black") else None,
+            company=soup.select_one(".media-list .is-black span").text.strip() if soup.select_one(".media-list .is-black span") else None,
             datePosted=soup.select_one(".t-small.t-mute span").text.strip() if soup.select_one(".t-small.t-mute span") else None,
             monthlySalaryRange=soup.select_one(".icon.is-salaries + b").text.strip() if soup.select_one(".icon.is-salaries + b") else None,
-            description=soup.select_one("h2.h5:contains('Job Description')").find_next().text.strip() if soup.select_one("h2.h5:contains('Job Description')") else None,
-            skillsRequired=soup.select_one("h2.h5:contains('Skills')").find_next().text.strip() if soup.select_one("h2.h5:contains('Skills')") else None,
-            companyIndustry=soup.select_one("h2.h5:contains('Job Details')").find_next("dd:contains('Company Industry')").find_next().text.strip() if soup.select_one("h2.h5:contains('Job Details')") else None,
-            employmentType=soup.select_one("h2.h5:contains('Job Details')").find_next("dd:contains('Employment Type')").find_next().text.strip() if soup.select_one("h2.h5:contains('Job Details')") else None,
-            numberOfVacancies=soup.select_one("h2.h5:contains('Job Details')").find_next("dd:contains('Number of Vacancies')").find_next().text.strip() if soup.select_one("h2.h5:contains('Job Details')") else None,
+            description=soup.select_one("h2.h5:contains('Job Description')").find_next("div").text.strip() if soup.select_one("h2.h5:contains('Job Description')") else None,
+            skillsRequired=soup.select_one("h2.h5:contains('Skills')").find_next("div").text.strip() if soup.select_one("h2.h5:contains('Skills')") else None,
+            companyIndustry=soup.select_one("dt:contains('Company Industry')").find_next("dd").text.strip() if soup.select_one("dt:contains('Company Industry')") else None,
+            employmentType=soup.select_one("dt:contains('Employment Type')").find_next("dd").text.strip() if soup.select_one("dt:contains('Employment Type')") else None,
+            numberOfVacancies=soup.select_one("dt:contains('Number of Vacancies')").find_next("dd").text.strip() if soup.select_one("dt:contains('Number of Vacancies')") else None,
             detailUrl=jobDetailUrl
         )
 
@@ -90,25 +91,35 @@ def scrape_job_detail(jobDetailUrl, retries=0):
         if retries < MAX_RETRIES:
             return scrape_job_detail(jobDetailUrl, retries + 1)
         else:
-            return Job()
+            return Job(detailUrl=jobDetailUrl)
 
-# Function to scrape sub-sector details
 def scrape_sub_sector_detail(subSectorUrl, retries=0):
     try:
         baseUrl = "https://www.bayt.com"
-        driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
-        driver.get(subSectorUrl)
+        fullUrl = urljoin(baseUrl, subSectorUrl)
+        print("Full URL:", fullUrl)
 
-        # Wait for the "Work from Home" filter checkbox to be visible and interactable
-        WebDriverWait(driver, 10).until(
-            EC.visibility_of_element_located((By.ID, "remote_working_type"))
+        options = Options()
+        options.headless = True  # Run headless Chrome
+        driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
+        driver.get(fullUrl)
+
+        # Wait for the sidebar to be visible
+        WebDriverWait(driver, 20).until(
+            EC.visibility_of_element_located((By.ID, "jsMainClusterContainer"))
         )
 
-        filterCheckbox = driver.find_element(By.ID, "remote_working_type")
-        driver.execute_script("arguments[0].scrollIntoView();", filterCheckbox)
-        filterCheckbox.click()
+        # Extract the "Work from Home" filter URL
+        work_from_home_input = driver.find_element(By.ID, "remote_working_type")
+        filter_url = work_from_home_input.get_attribute("onchange").split("AjaxUrlHandler.goTo('")[1].split("')")[0]
+        filter_url = urljoin(baseUrl, filter_url)
+        print("Filter URL:", filter_url)
 
-        WebDriverWait(driver, 10).until(
+        # Navigate to the filtered URL
+        driver.get(filter_url)
+
+        # Wait for the job listings to be visible
+        WebDriverWait(driver, 20).until(
             EC.presence_of_element_located((By.CSS_SELECTOR, "#results_inner_card li[data-js-job]"))
         )
 
@@ -116,7 +127,13 @@ def scrape_sub_sector_detail(subSectorUrl, retries=0):
         driver.quit()
 
         soup = BeautifulSoup(html, 'html.parser')
-        print("Respons",soup)
+        print("Response:", soup)
+
+        # Check if there are job listings available
+        no_jobs_message = soup.select_one("#results_inner_card li.card p")
+        if no_jobs_message and "Sorry, we found no jobs matching your search criteria." in no_jobs_message.text:
+            print("No jobs found for the selected criteria.")
+            return []
 
         jobList = []
 
@@ -139,25 +156,27 @@ def scrape_sub_sector_detail(subSectorUrl, retries=0):
                 experience=experience,
                 datePosted=datePosted,
                 easyApply=easyApply,
-                detailUrl=f"{baseUrl}{jobDetailUrl}" if jobDetailUrl else "",
+                detailUrl=urljoin(baseUrl, jobDetailUrl) if jobDetailUrl else "",
                 jobType=jobType
             )
 
-            jobList.append(job)
-
-        for job in jobList:
+            print("Job Detail Url:", job.detailUrl)
             detailPageData = scrape_job_detail(job.detailUrl, 0)
             if detailPageData:
                 job.__dict__.update(detailPageData.__dict__)
+            print("Job:", job.title)
+            jobList.append(job)
+
 
         return jobList
     except Exception as error:
+        print(f"Error: {error}")
         if handle_http_error(error, retries):
             return scrape_sub_sector_detail(subSectorUrl, retries + 1)
         else:
             print("Error fetching or scraping sub-sector detail page:", error)
             return []
-
+# Example call
 # Main scraping function
 def scrape_web_page():
     try:
@@ -190,6 +209,7 @@ def fetch_data_with_retry(url, retries=0):
                 countText = subElement.text.strip().split('(')[-1].split(')')[0] if '(' in subElement.text.strip() else "0"
                 count = int(countText)
                 subSectorUrl = subElement.select_one("a").get("href") if subElement.select_one("a") else ""
+                print("Sub Sector Url",subSectorUrl)
                 subSectors.append(SubSector(subSectorName, count, subSectorUrl))
 
             jobSectors.append({
@@ -198,6 +218,7 @@ def fetch_data_with_retry(url, retries=0):
                 "subSectors": subSectors
             })
 
+            print("Job Sector", subSectors)
         for sector in jobSectors:
             for subSector in sector["subSectors"]:
                 subSector.jobList = scrape_sub_sector_detail(subSector.subSectorUrl, 0)
