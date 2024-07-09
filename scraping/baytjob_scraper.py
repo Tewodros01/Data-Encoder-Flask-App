@@ -10,6 +10,8 @@ from selenium.webdriver.support import expected_conditions as EC
 from webdriver_manager.chrome import ChromeDriverManager
 from urllib.parse import urljoin
 
+from normilizbaytjob import save_to_excel
+
 # Chrome options setup
 options = Options()
 options.add_argument('--disable-dev-shm-usage')
@@ -34,20 +36,20 @@ def handle_http_error(error, retries):
 
 # Define Job and SubSector classes
 class Job:
-    def __init__(self, title=None, company=None, location=None, description=None,
-                 experience=None, datePosted=None, easyApply=None, jobLocation=None,
-                 jobType=None, companyIndustry=None, jobRole=None, employmentType=None,
+    def __init__(self, job_title=None,  job_description=None,company_name=None, location=None,
+                 experience=None, posting_date=None, easyApply=None, jobLocation=None,
+                 job_type=None, companyIndustry=None, jobRole=None, employmentType=None,
                  monthlySalaryRange=None, numberOfVacancies=None, skillsRequired=None,
                  detailUrl=None):
-        self.title = title
-        self.company = company
+        self.job_title = job_title
+        self.job_description = job_description
+        self.company_name = company_name
         self.location = location
-        self.description = description
         self.experience = experience
-        self.datePosted = datePosted
+        self.posting_date = posting_date
         self.easyApply = easyApply
         self.jobLocation = jobLocation
-        self.jobType = jobType
+        self.job_type = job_type
         self.companyIndustry = companyIndustry
         self.jobRole = jobRole
         self.employmentType = employmentType
@@ -73,17 +75,32 @@ def scrape_job_detail(jobDetailUrl, retries=0):
         soup = BeautifulSoup(html, 'html.parser')
 
         job = Job(
-            title=soup.select_one("#job_title").text.strip() if soup.select_one("#job_title") else None,
-            company=soup.select_one(".media-list .is-black span").text.strip() if soup.select_one(".media-list .is-black span") else None,
-            datePosted=soup.select_one(".t-small.t-mute span").text.strip() if soup.select_one(".t-small.t-mute span") else None,
+            job_title=soup.select_one("#job_title").text.strip() if soup.select_one("#job_title") else None,
+            company_name=soup.select_one(".media-list .is-black span").text.strip() if soup.select_one(".media-list .is-black span") else None,
+            posting_date=soup.select_one(".t-small.t-mute span").text.strip() if soup.select_one(".t-small.t-mute span") else None,
             monthlySalaryRange=soup.select_one(".icon.is-salaries + b").text.strip() if soup.select_one(".icon.is-salaries + b") else None,
-            description=soup.select_one("h2.h5:contains('Job Description')").find_next("div").text.strip() if soup.select_one("h2.h5:contains('Job Description')") else None,
+            job_description=soup.select_one("h2.h5:contains('Job Description')").find_next("div").text.strip() if soup.select_one("h2.h5:contains('Job Description')") else None,
             skillsRequired=soup.select_one("h2.h5:contains('Skills')").find_next("div").text.strip() if soup.select_one("h2.h5:contains('Skills')") else None,
             companyIndustry=soup.select_one("dt:contains('Company Industry')").find_next("dd").text.strip() if soup.select_one("dt:contains('Company Industry')") else None,
             employmentType=soup.select_one("dt:contains('Employment Type')").find_next("dd").text.strip() if soup.select_one("dt:contains('Employment Type')") else None,
             numberOfVacancies=soup.select_one("dt:contains('Number of Vacancies')").find_next("dd").text.strip() if soup.select_one("dt:contains('Number of Vacancies')") else None,
-            detailUrl=jobDetailUrl
+            detailUrl=jobDetailUrl,
+            job_type= soup.select_one("dt:contains('Employment Type')").find_next("dd").text.strip() if soup.select_one("dt:contains('Employment Type')") else None,
+
         )
+
+        print("Job Type In Job Detail", job.job_type)
+        print("Job Company Name In Job Detail", job.company_name)
+        print("Job Title In Job Detail", job.job_title)
+        print("Job Description In Job Detail", job.job_description)
+        print("Job Employment Type In Job Detail", job.employmentType)
+        print("Job Experience In Job Detail", job.experience)
+        print("Job Skill Required In Job Detail", job.skillsRequired)
+        print("Job Company Industry  In Job Detail", job.companyIndustry)
+        print("Job Company Easy Apply  In Job Detail", job.easyApply)
+        print("Job Location  In Job Detail", job.jobLocation)
+        print("Job Role  In Job Detail", job.jobRole)
+
 
         return job
     except requests.RequestException as error:
@@ -138,33 +155,32 @@ def scrape_sub_sector_detail(subSectorUrl, retries=0):
         jobList = []
 
         for element in soup.select("#results_inner_card li[data-js-job]"):
-            title = element.select_one("h2 a").text.strip() if element.select_one("h2 a") else ""
-            company = element.select_one(".u-stretch b").get("title").strip() if element.select_one(".u-stretch b") else ""
+            job_title = element.select_one("h2 a").text.strip() if element.select_one("h2 a") else ""
+            company_name = element.select_one(".u-stretch b").get("title").strip() if element.select_one(".u-stretch b") else ""
             jobLocation = element.select_one(".t-mute").text.strip() if element.select_one(".t-mute") else ""
-            description = element.select_one(".m10t.t-small").text.strip() if element.select_one(".m10t.t-small") else ""
+            job_description = element.select_one(".m10t.t-small").text.strip() if element.select_one(".m10t.t-small") else ""
             experience = element.select_one("ul.list li[data-automation-id='id_careerlevel']").text.strip() if element.select_one("ul.list li[data-automation-id='id_careerlevel']") else ""
-            datePosted = element.select_one("[data-automation-id='job-active-date']").text.strip() if element.select_one("[data-automation-id='job-active-date']") else ""
+            posting_date = element.select_one("[data-automation-id='job-active-date']").text.strip() if element.select_one("[data-automation-id='job-active-date']") else ""
             easyApply = "Easy apply" in element.select_one("a.btn.is-small").text if element.select_one("a.btn.is-small") else False
             jobDetailUrl = element.select_one("h2 a").get("href") if element.select_one("h2 a") else ""
-            jobType = element.select_one(".job-type-class").text.strip() if element.select_one(".job-type-class") else ""
 
             job = Job(
-                title=title,
-                company=company,
+                job_title=job_title,
+                company_name=company_name,
                 jobLocation=jobLocation,
-                description=description,
+                job_description=job_description,
                 experience=experience,
-                datePosted=datePosted,
+                posting_date=posting_date,
                 easyApply=easyApply,
                 detailUrl=urljoin(baseUrl, jobDetailUrl) if jobDetailUrl else "",
-                jobType=jobType
             )
 
             print("Job Detail Url:", job.detailUrl)
+            print("Job Type:", job.job_type)
+
             detailPageData = scrape_job_detail(job.detailUrl, 0)
             if detailPageData:
                 job.__dict__.update(detailPageData.__dict__)
-            print("Job:", job.title)
             jobList.append(job)
 
 
@@ -220,7 +236,7 @@ def fetch_data_with_retry(url, retries=0):
 
             print("Job Sector", subSectors)
         for sector in jobSectors:
-            for subSector in sector["subSectors"]:
+            for subSector in sector["subSectors"][:1]:
                 subSector.jobList = scrape_sub_sector_detail(subSector.subSectorUrl, 0)
 
         return jobSectors
@@ -244,14 +260,15 @@ def main():
                     print(f"\tSub-Sector: {subSector.name}")
                     if subSector.jobList:
                         for job in subSector.jobList:
-                            print(f"\t\tJob Title: {job.title}")
-                            print(f"\t\tCompany: {job.company}")
+                            print(f"\t\tJob Title: {job.job_title}")
+                            print(f"\t\tCompany: {job.company_name}")
                             print(f"\t\tLocation: {job.jobLocation}")
-                            print(f"\t\tJob Type: {job.jobType}")
-                            print(f"\t\tDate Posted: {job.datePosted}")
+                            print(f"\t\tJob Type: {job.job_type}")
+                            print(f"\t\tDate Posted: {job.posting_date}")
                             print(f"\t\tEasy Apply: {job.easyApply}")
                             print(f"\t\tDetail URL: {job.detailUrl}")
                             print("")
+            save_to_excel(scraped_data["data"])
 
         else:
             print(f"Failed to scrape data. Status Code: {scraped_data['status']}, Message: {scraped_data['message']}")
