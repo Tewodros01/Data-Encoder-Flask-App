@@ -235,7 +235,7 @@ class JobDataEncoder:
             print(error_message)
             return {"status": "error", "message": error_message}
         # Check if job already exists
-        if job_exists(job_details.get('job_apply_url'), job_details.get('job_apply_type'), job_details.get('job_apply_email')):
+        if job_exists(job_details):
             error_message = "Job already exists in the database."
             print(error_message)
             return {"status": "error", "message": error_message}

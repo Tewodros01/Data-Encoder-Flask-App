@@ -1,4 +1,5 @@
-import xlsxwriter
+import pandas as pd
+from datetime import datetime
 from datetime import datetime
 
 class NormalizedJob:
@@ -165,40 +166,40 @@ def get_current_date_time_string():
     return now.strftime("%Y-%m-%d_%H-%M-%S")
 
 def save_to_excel(job_sectors):
-    workbook = xlsxwriter.Workbook(f'JobListings_{get_current_date_time_string()}.xlsx')
-    worksheet = workbook.add_worksheet('All Job Listings')
-
     all_job_listings = []
 
     for sector in job_sectors:
         for sub_sector in sector["subSectors"]:
             for job in sub_sector.jobList:
-                normalized_job = NormalizedJob(
-                    company_name=job.company_name,
-                    job_sector=normalize_job_sector(sanitize_sector_name(sub_sector.name)),
-                    job_title=job.job_title,
-                    job_description=job.job_description,
-                    job_type=normalize_job_type(job.employmentType),
-                    skills=job.skillsRequired,
-                    job_apply_type="external",
-                    job_apply_url=job.detailUrl,
-                    career_level=normalize_career_level(job.experience),
-                    unique_job_id=job.detailUrl,  # Assuming detail URL can be used as a unique ID
-                    detail_url=job.detailUrl
-                )
+                normalized_job = {
+                    'company_name': job.company_name,
+                    'job_sector': normalize_job_sector(sanitize_sector_name(sub_sector.name)),
+                    'job_title': job.job_title,
+                    'job_description': job.job_description,
+                    'job_type':normalize_job_type(job.employmentType),
+                    'skills': job.skillsRequired,
+                    'job_apply_type': "external",
+                    'job_apply_url': job.detailUrl,
+                    'career_level': job.experience,
+                    'experience':job.experience,
+                    'unique_job_id': job.detailUrl,  # Assuming detail URL can be used as a unique ID
+                    'detail_url': job.detailUrl
+                }
 
-                if normalized_job.company_name and normalized_job.job_sector != "Other" and normalized_job.job_type != "Unknown Job Type":
-                    all_job_listings.append(normalized_job)
+                # Debugging output
+                print(f"Job Title: {job.job_title}")
+                print(f"Company Name: {job.company_name}")
+                print(f"Job Sector: {normalized_job['job_sector']}")
+                print(f"Job Type: {normalized_job['job_type']}")
+                print(f"Job Skills: {job.skillsRequired}")
 
-    headers = [attr for attr in dir(NormalizedJob) if not callable(getattr(NormalizedJob, attr)) and not attr.startswith("__")]
-    for col_num, header in enumerate(headers):
-        worksheet.write(0, col_num, header)
+                all_job_listings.append(normalized_job)
 
-    for row_num, job in enumerate(all_job_listings, start=1):
-        for col_num, header in enumerate(headers):
-            worksheet.write(row_num, col_num, getattr(job, header))
+    # Convert the list of dictionaries to a pandas DataFrame
+    df = pd.DataFrame(all_job_listings)
 
-    workbook.close()
-    print(f'Data saved to JobListings_{get_current_date_time_string()}.xlsx')
-
+    # Save the DataFrame to an Excel file
+    file_name = f'BaytJobJobListings_{get_current_date_time_string()}.xlsx'
+    df.to_excel(file_name, index=False)
+    print(f'Data saved to {file_name}')
 
