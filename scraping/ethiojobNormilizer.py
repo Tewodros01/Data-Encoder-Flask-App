@@ -1,8 +1,12 @@
 import xlsxwriter
 from datetime import datetime
+import json
+
+from database_operations import job_exists
+
 
 class NormalizedJob:
-    def __init__(self, id=None, post_date=None, email='', password='', company_name=None, company_logo=None,
+    def __init__(self, id=None, post_date=None, email=None, password=None, company_name=None, company_logo=None,
                  job_title=None, job_description=None, application_deadline=None, job_sector=None, job_type=None,
                  skills=None, job_apply_type=None, job_apply_url=None, salary_type=None, min_salary=None, max_salary=None,
                  salary_currency=None, salary_position=None, salary_separator=None, salary_decimals=None,
@@ -44,6 +48,7 @@ class NormalizedJob:
         self.zoom = zoom
         self.unique_job_id = unique_job_id
         self.detail_url = detail_url
+
 
 def normalize_sector(job_sector):
     sector_mapping = {
@@ -102,6 +107,7 @@ def normalize_sector(job_sector):
     }
     return sector_mapping.get(job_sector, "Unknown Sector")
 
+
 def normalize_job_type(job_type):
     job_type_mapping = {
         "Part time": "Part time",
@@ -119,6 +125,7 @@ def normalize_job_type(job_type):
     }
     return job_type_mapping.get(job_type, "Unknown Job Type")
 
+
 def normalize_experience(experience):
     experience_mapping = {
         "Mid Level(3-5 years)": "3+ Years",
@@ -127,6 +134,7 @@ def normalize_experience(experience):
         "Executive(VP, Director)": "8 Years +"
     }
     return experience_mapping.get(experience, "Unknown Experience Level")
+
 
 def normalize_career_level(career_level):
     career_level_mapping = {
@@ -137,9 +145,11 @@ def normalize_career_level(career_level):
     }
     return career_level_mapping.get(career_level, "Unknown Career Level")
 
+
 def get_current_date_time_string():
     now = datetime.now()
     return now.strftime("%Y-%m-%d_%H-%M-%S")
+
 
 def save_to_excel(job_sectors):
     workbook = xlsxwriter.Workbook(f'EthioJobJobListings_{get_current_date_time_string()}.xlsx')
@@ -148,34 +158,37 @@ def save_to_excel(job_sectors):
     all_job_listings = []
 
     for sector in job_sectors:
-        if sector['jobListings'] and len(sector['jobListings']) > 0:
-            for job in sector['jobListings']:
+        if sector['job_listing'] and len(sector['job_listing']) > 0:
+            for job in sector['job_listing']:
                 normalized_job = NormalizedJob(
-                    id=job['id'],
-                    post_date=job['posted_date'],
-                    email="",
-                    password="",
-                    company_name=job['company_name'],
-                    company_logo=job['company_logo'],
-                    job_sector=normalize_sector(sector['sector_name']),
-                    job_title=job['job_title'],
-                    job_description=job['job_description'],
-                    application_deadline=job['application_deadline'],
-                    job_type=normalize_job_type(job['employment_type']),
-                    skills=job['job_requirements'],
+                    id=job.get('id'),
+                    post_date=job.get('posted_date'),
+                    email=None,
+                    password=None,
+                    company_name=job.get('company_name'),
+                    company_logo=job.get('company_logo'),
+                    job_sector=normalize_sector(sector.get('sector_name')),
+                    job_title=job.get('job_title'),
+                    job_description=job.get('job_description'),
+                    application_deadline=job.get('application_deadline'),
+                    job_type=normalize_job_type(job.get('employment_type')),
+                    skills=job.get('job_requirements'),
                     job_apply_type="external",
-                    job_apply_url=job['detail_url'],
-                    min_salary=job['salary'],
-                    experience=normalize_experience(job['job_level']),
-                    career_level=normalize_career_level(job['job_level']),
-                    unique_job_id=job['unique_job_id'],
-                    detail_url=job['detail_url']
+                    job_apply_url=job.get('detail_url'),
+                    min_salary=job.get('salary'),
+                    experience=normalize_experience(job.get('job_level')),
+                    career_level=normalize_career_level(job.get('job_level')),
+                    unique_job_id=job.get('unique_job_id'),
+                    detail_url=job.get('detail_url')
                 )
 
-                if (normalized_job.company_name and
-                    normalized_job.job_sector != "Unknown Sector" and
-                    normalized_job.job_type != "Unknown Job Type"):
+                if job_exists(normalized_job):
+                    print("Job Alredy Exit")
+                else:
                     all_job_listings.append(normalized_job)
+
+    # all_job_listings_dict = [vars(job) for job in all_job_listings]
+    # print(f"All Job Listings: {json.dumps(all_job_listings_dict, indent=4)}")
 
     headers = [attr for attr in dir(NormalizedJob) if not callable(getattr(NormalizedJob, attr)) and not attr.startswith("__")]
     for col_num, header in enumerate(headers):
@@ -183,7 +196,7 @@ def save_to_excel(job_sectors):
 
     for row_num, job in enumerate(all_job_listings, 1):
         for col_num, header in enumerate(headers):
-            worksheet.write(row_num, col_num, getattr(job, header))
+            worksheet.write(row_num, col_num, getattr(job, header) or "")
 
     worksheet.set_column(0, len(headers) - 1, 20)
     workbook.close()

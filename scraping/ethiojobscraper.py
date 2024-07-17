@@ -1,3 +1,4 @@
+import json
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
@@ -52,44 +53,44 @@ predefinedSectors = [
 
 category_urls = [
     "https://ethiojobs.net/jobs?search=Accounting+and+Finance&page=1",
-    "https://ethiojobs.net/jobs?search=Admin%2C+Secretarial%2C+and+Clerical&page=1",
-    "https://ethiojobs.net/jobs?search=Agriculture&page=1",
-    "https://ethiojobs.net/jobs?search=Architecture+and+Construction&page=1",
-    "https://ethiojobs.net/jobs?search=Automotive&page=1",
-    "https://ethiojobs.net/jobs?search=Banking+and+Insurance&page=1",
-    "https://ethiojobs.net/jobs?search=Business+and+Administration&page=1",
-    "https://ethiojobs.net/jobs?search=Business+Development&page=1",
-    "https://ethiojobs.net/jobs?search=Communications%2C+Media+and+Journalism&page=1",
-    "https://ethiojobs.net/jobs?search=Consultancy+and+Training&page=1",
-    "https://ethiojobs.net/jobs?search=Creative+Arts&page=1",
-    "https://ethiojobs.net/jobs?search=Customer+Service&page=1",
-    "https://ethiojobs.net/jobs?search=Development+and+Project+Management&page=1",
-    "https://ethiojobs.net/jobs?search=Economics&page=1",
-    "https://ethiojobs.net/jobs?search=Education&page=1",
-    "https://ethiojobs.net/jobs?search=Engineering&page=1",
-    "https://ethiojobs.net/jobs?search=Environment+and+Natural+Resource&page=1",
-    "https://ethiojobs.net/jobs?search=Event+Management&page=1",
-    "https://ethiojobs.net/jobs?search=FMCG+and+Manufacturing&page=1",
-    "https://ethiojobs.net/jobs?search=Health+Care&page=1",
-    "https://ethiojobs.net/jobs?search=Hotel+and+Hospitality&page=1",
-    "https://ethiojobs.net/jobs?search=Human+Resource+and+Recruitment&page=1",
-    "https://ethiojobs.net/jobs?search=IT%2C+Computer+Science+and+Software+Engineering&page=1",
-    "https://ethiojobs.net/jobs?search=Legal&page=1",
-    "https://ethiojobs.net/jobs?search=Logistics%2C+Transport+and+Supply+Chain&page=1",
-    "https://ethiojobs.net/jobs?search=Management&page=1",
-    "https://ethiojobs.net/jobs?search=Natural+Sciences&page=1",
-    "https://ethiojobs.net/jobs?search=Pharmaceutical&page=1",
-    "https://ethiojobs.net/jobs?search=Purchasing+and+Procurement&page=1",
-    "https://ethiojobs.net/jobs?search=Quality+Assurance&page=1",
-    "https://ethiojobs.net/jobs?search=Research+and+Development&page=1",
-    "https://ethiojobs.net/jobs?search=Retail%2C+Wholesale+and+Distribution&page=1",
-    "https://ethiojobs.net/jobs?search=Sales+and+Marketing&page=1",
-    "https://ethiojobs.net/jobs?search=Security&page=1",
-    "https://ethiojobs.net/jobs?search=Social+Sciences+and+Community+Service&page=1",
-    "https://ethiojobs.net/jobs?search=Technology&page=1",
-    "https://ethiojobs.net/jobs?search=Telecommunications&page=1",
-    "https://ethiojobs.net/jobs?search=Warehouse%2C+Supply+Chain+and+Distribution&page=1",
-    "https://ethiojobs.net/jobs?search=Water+and+Sanitation&page=1"
+    # "https://ethiojobs.net/jobs?search=Admin%2C+Secretarial%2C+and+Clerical&page=1",
+    # "https://ethiojobs.net/jobs?search=Agriculture&page=1",
+    # "https://ethiojobs.net/jobs?search=Architecture+and+Construction&page=1",
+    # "https://ethiojobs.net/jobs?search=Automotive&page=1",
+    # "https://ethiojobs.net/jobs?search=Banking+and+Insurance&page=1",
+    # "https://ethiojobs.net/jobs?search=Business+and+Administration&page=1",
+    # "https://ethiojobs.net/jobs?search=Business+Development&page=1",
+    # "https://ethiojobs.net/jobs?search=Communications%2C+Media+and+Journalism&page=1",
+    # "https://ethiojobs.net/jobs?search=Consultancy+and+Training&page=1",
+    # "https://ethiojobs.net/jobs?search=Creative+Arts&page=1",
+    # "https://ethiojobs.net/jobs?search=Customer+Service&page=1",
+    # "https://ethiojobs.net/jobs?search=Development+and+Project+Management&page=1",
+    # "https://ethiojobs.net/jobs?search=Economics&page=1",
+    # "https://ethiojobs.net/jobs?search=Education&page=1",
+    # "https://ethiojobs.net/jobs?search=Engineering&page=1",
+    # "https://ethiojobs.net/jobs?search=Environment+and+Natural+Resource&page=1",
+    # "https://ethiojobs.net/jobs?search=Event+Management&page=1",
+    # "https://ethiojobs.net/jobs?search=FMCG+and+Manufacturing&page=1",
+    # "https://ethiojobs.net/jobs?search=Health+Care&page=1",
+    # "https://ethiojobs.net/jobs?search=Hotel+and+Hospitality&page=1",
+    # "https://ethiojobs.net/jobs?search=Human+Resource+and+Recruitment&page=1",
+    # "https://ethiojobs.net/jobs?search=IT%2C+Computer+Science+and+Software+Engineering&page=1",
+    # "https://ethiojobs.net/jobs?search=Legal&page=1",
+    # "https://ethiojobs.net/jobs?search=Logistics%2C+Transport+and+Supply+Chain&page=1",
+    # "https://ethiojobs.net/jobs?search=Management&page=1",
+    # "https://ethiojobs.net/jobs?search=Natural+Sciences&page=1",
+    # "https://ethiojobs.net/jobs?search=Pharmaceutical&page=1",
+    # "https://ethiojobs.net/jobs?search=Purchasing+and+Procurement&page=1",
+    # "https://ethiojobs.net/jobs?search=Quality+Assurance&page=1",
+    # "https://ethiojobs.net/jobs?search=Research+and+Development&page=1",
+    # "https://ethiojobs.net/jobs?search=Retail%2C+Wholesale+and+Distribution&page=1",
+    # "https://ethiojobs.net/jobs?search=Sales+and+Marketing&page=1",
+    # "https://ethiojobs.net/jobs?search=Security&page=1",
+    # "https://ethiojobs.net/jobs?search=Social+Sciences+and+Community+Service&page=1",
+    # "https://ethiojobs.net/jobs?search=Technology&page=1",
+    # "https://ethiojobs.net/jobs?search=Telecommunications&page=1",
+    # "https://ethiojobs.net/jobs?search=Warehouse%2C+Supply+Chain+and+Distribution&page=1",
+    # "https://ethiojobs.net/jobs?search=Water+and+Sanitation&page=1"
 ]
 
 
@@ -161,25 +162,22 @@ def scrape_job_details(job_url):
             print(f"404 Error: Page not found for URL: {job_url}")
             driver.quit()
             return job_details
-        # Ensure specific elements are loaded
+
+        # Wait for specific elements to load
         WebDriverWait(driver, 120).until(
-            EC.presence_of_element_located((By.CSS_SELECTOR, 'div.MuiGrid-item.MuiGrid-grid-xs-12 p.MuiTypography-root.MuiTypography-body1.mui-style-17sbmss'))
-        )
-        WebDriverWait(driver, 120).until(
-            EC.presence_of_element_located((By.CSS_SELECTOR, 'div.MuiGrid-item.MuiGrid-grid-xs-12 p.MuiTypography-root.MuiTypography-body1.mui-style-pdximt'))
+            EC.presence_of_element_located((By.CSS_SELECTOR, 'div.MuiGrid-item.MuiGrid-grid-xs-12 p'))
         )
 
-        WebDriverWait(driver, 30).until(
-            EC.presence_of_element_located((By.ID, "sidebar"))
-        )
         job_details['about_job'] = driver.find_element(By.CSS_SELECTOR, 'div.MuiGrid-item.MuiGrid-grid-xs-12 p.MuiTypography-root.MuiTypography-body1.mui-style-17sbmss').text
         job_details['about_you'] = driver.find_element(By.CSS_SELECTOR, 'div.MuiGrid-item.MuiGrid-grid-xs-12 p.MuiTypography-root.MuiTypography-body1.mui-style-pdximt').text
         job_details['required_skills'] = driver.find_element(By.CSS_SELECTOR, 'div.MuiGrid-item.MuiGrid-grid-xs-12 ul.MuiList-root.MuiList-padding').text
         job_details['how_to_apply'] = driver.find_element(By.CSS_SELECTOR, 'div.MuiGrid-item.MuiGrid-grid-xs-12 p.MuiTypography-root.MuiTypography-body1.mui-style-pdximt').text
+
         # Ensure the sidebar is fully loaded
         sidebar = WebDriverWait(driver, 30).until(
             EC.presence_of_element_located((By.ID, "sidebar"))
         )
+
         try:
             job_details['employment_type'] = sidebar.find_element(By.XPATH, ".//p[contains(text(), 'Employment Type')]/following-sibling::p").text
         except NoSuchElementException:
@@ -227,21 +225,18 @@ def scrape_job_details(job_url):
     return job_details
 
 def main():
-
     all_jobs_by_category = []
     for i, category_url in enumerate(category_urls):
         print(f"\nScraping jobs from URL: {category_url}")
         jobs = scrape_jobs_by_category(category_url)
-
         all_jobs_by_category.append({
             "job_sector": predefinedSectors[i],
             "job_listing": jobs
         })
 
-    for category in all_jobs_by_category:
-        for job in category["job_listing"]:
-            print(category)
-            # normalize_job_data(job, category["job_sector"])
+    print(f"All Job Listings: {json.dumps(all_jobs_by_category, indent=4)}")
+
     save_to_excel(all_jobs_by_category)
+
 if __name__ == "__main__":
     main()

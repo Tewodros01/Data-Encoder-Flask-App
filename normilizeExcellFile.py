@@ -3,7 +3,7 @@ from fuzzywuzzy import process, fuzz
 from datetime import datetime
 
 # Load the Excel files
-job_listings_path = 'file/EthioJobJobListings_2024-07-08_16-30-31.xlsx'
+job_listings_path = 'file/EthioJobJobListings_2024-07-13_12-11-28.xlsx'
 employer_list_path = 'file/Employer_List_For_Job_Posting_V0.0_05-22-2024.xlsx'
 
 job_listings_df = pd.read_excel(job_listings_path, sheet_name='All Job Listings')

@@ -89,7 +89,6 @@ class JobDataEncoder:
 
     def register_employer_account(self, registration_data):
         try:
-
             self.driver.get(self.login_url)
             time.sleep(2)  # Wait for the page to load
 
@@ -149,13 +148,16 @@ class JobDataEncoder:
             scroll_to_element(confirm_password_field)
             confirm_password_field.send_keys(registration_data['confirm_password'])
 
-            phone_field = WebDriverWait(registration_form, 10).until(
-                EC.element_to_be_clickable((By.NAME, 'pt_user_phone'))
-            )
-            scroll_to_element(phone_field)
-            self.driver.execute_script("arguments[0].click();", phone_field)  # Trigger click to initialize validation
-            time.sleep(1)  # Wait for the phone input to be fully initialized
-            phone_field.send_keys(registration_data['phone'])
+            # Skip phone field entirely
+            phone_number = registration_data['phone']
+            if pd.notna(phone_number):
+                phone_field = WebDriverWait(registration_form, 10).until(
+                    EC.element_to_be_clickable((By.NAME, 'pt_user_phone'))
+                )
+                scroll_to_element(phone_field)
+                self.driver.execute_script("arguments[0].click();", phone_field)  # Trigger click to initialize validation
+                time.sleep(1)  # Wait for the phone input to be fully initialized
+                phone_field.send_keys(phone_number)
 
             organization_name_field = registration_form.find_element(By.NAME, 'pt_user_organization')
             scroll_to_element(organization_name_field)
@@ -176,11 +178,13 @@ class JobDataEncoder:
                 EC.element_to_be_clickable((By.CSS_SELECTOR, 'input.jobsearch-register-submit-btn'))
             )
             scroll_to_element(submit_button)
+
             submit_button.click()
             time.sleep(5)  # Wait for the registration to complete
 
             print("Employer account registration successful!")
             return True
+
         except (TimeoutException, NoSuchElementException, ElementNotInteractableException) as e:
             print(f"Employer account registration failed due to exception: {e}")
             return False
