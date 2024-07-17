@@ -2,7 +2,7 @@ import pandas as pd
 from datetime import datetime
 import re
 
-from database_operations import job_exists
+# from database_operations import job_exists
 
 def get_current_date_time_string():
     now = datetime.now()
@@ -122,10 +122,10 @@ def normalize_and_save_jobs(job_sectors):
                     normalized_job['job_sector'] != "Unknown Sector" and
                     normalized_job['job_type'] != "Unknown Job Type"
                 ):
-                    if job_exists(normalized_job):
-                        print("Job Alredy Exit")
-                    else:
-                        all_job_listings.append(normalized_job)
+                    # if job_exists(normalized_job):
+                    #     print("Job Alredy Exit")
+                    # else:
+                    all_job_listings.append(normalized_job)
 
     print("All Job Listings", all_job_listings)
 

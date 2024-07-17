@@ -129,8 +129,15 @@ def scrape_jobs(driver, sector, job_type):
     driver.execute_script("arguments[0].click();", job_type_checkbox)
 
     # Click the filter button
-    filter_button = driver.find_element(By.CSS_SELECTOR, "button.bg-primary")
-    driver.execute_script("arguments[0].click();", filter_button)
+    filter_button_selector = ".bg-primary.my-4.rounded.px-4.py-1.text-sm.text-white:not(.cursor-not-allowed)"
+    try:
+        filter_button = WebDriverWait(driver, 10).until(EC.element_to_be_clickable((By.CSS_SELECTOR, filter_button_selector)))
+        driver.execute_script("arguments[0].click();", filter_button)
+        print("Filter button clicked")
+    except TimeoutException as e:
+        print("Filter button not found or not clickable:", e)
+    # filter_button = driver.find_element(By.CSS_SELECTOR, "button.bg-primary")
+    # driver.execute_script("arguments[0].click();", filter_button)
     time.sleep(2)
 
     # Scrape jobs
@@ -191,7 +198,6 @@ def scrape_jobs(driver, sector, job_type):
     # Reset filters
     driver.execute_script("arguments[0].click();", sector_checkbox)
     driver.execute_script("arguments[0].click();", job_type_checkbox)
-    driver.execute_script("arguments[0].click();", filter_button)
     time.sleep(2)
 
     return jobs
@@ -215,8 +221,8 @@ def main():
         filters = scrape_filters(driver)
         all_jobs = []
         # Scrape jobs for each sector and job type
-        for sector in filters['sectors'][:1]:
-            for job_type in filters['job_types'][:1]:
+        for sector in filters['sectors'][:2]:
+            for job_type in filters['job_types'][:2]:
                 jobs = scrape_jobs(driver, sector, job_type)
                 all_jobs.append({'sector': sector, 'jobtype': job_type, 'joblist': jobs})
                 print(f"All Job: {all_jobs}")
