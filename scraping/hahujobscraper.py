@@ -48,6 +48,9 @@ def scrape_job_detail_page(sector_url , job_index):
 
         job_details = {}
 
+        # Extract the new page URL after clicking "Read More"
+        new_url = driver.current_url
+
         # Scrape job title
         job_title = driver.find_element(By.XPATH, "//h3[contains(@class, 'font-extrabold')]").text
         job_details['job_title'] = job_title
@@ -77,6 +80,9 @@ def scrape_job_detail_page(sector_url , job_index):
         # Scrape job description
         job_description = driver.find_element(By.ID, "job_description").text
         job_details['job_description'] = job_description
+
+        job_details['application_url'] = new_url
+
 
         # Close the driver
         driver.quit()
@@ -132,14 +138,17 @@ def scrape_sector_detail_page(url, retries=0):
 
                 job_details = scrape_job_detail_page(url, job_index)
 
-                job_details = {
-                    'Title': title,
-                    'Company': company,
-                    'Location': location,
-                    'Experience': experience,
-                    'Type': job_type,
-                    'Positions': positions
+                job = {
+                    'job_title': title,
+                    'company_name': company,
+                    'job_location': location,
+                    'experience': experience,
+                    'job__type': job_type,
+                    'positions': positions,
+                    **job_details
                 }
+
+                print(f'Job ', job_details)
 
                 job_list.append(job_details)
 
