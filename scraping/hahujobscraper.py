@@ -7,13 +7,95 @@ from selenium.webdriver.support import expected_conditions as EC
 from webdriver_manager.chrome import ChromeDriverManager
 import time
 
+def scrape_job_detail_page(sector_url , job_index):
+    try:
+        # Setup WebDriver options
+        options = Options()
+        options.add_argument("--no-sandbox")
+        options.add_argument("--disable-dev-shm-usage")
+        options.headless = True  # Set to False to see the browser
+        options.add_argument("--window-size=1920,1000")
+        options.add_argument("--disable-gpu")
+
+        # Install and setup ChromeDriver
+        driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
+
+        # Open the sector webpage
+        driver.get(sector_url)
+        time.sleep(5)  # Let the page load completely
+
+        WebDriverWait(driver, 20).until(
+            EC.presence_of_element_located((By.CSS_SELECTOR, 'div.grid.grid-cols-1'))
+        )
+
+        # Scrape the desired data
+        jobs = driver.find_elements(By.CSS_SELECTOR, 'div.grid.grid-cols-1 > div')
+
+        if job_index >= len(jobs):
+            print(f"Job index {job_index} is out of range for the current sector page.")
+            driver.quit()
+            return {}
+
+        # Click the "Read More" button using JavaScript
+        read_more_button = jobs[job_index].find_element(By.XPATH, ".//button[contains(., 'Read More')]")
+        driver.execute_script("arguments[0].click();", read_more_button)
+
+        time.sleep(5)
+        # Ensure the full page is loaded
+        WebDriverWait(driver, 20).until(
+            EC.presence_of_element_located((By.XPATH, "//div[contains(@class, 'mt-8 xl:mt-28')]"))
+        )
+
+        job_details = {}
+
+        # Scrape job title
+        job_title = driver.find_element(By.XPATH, "//h3[contains(@class, 'font-extrabold')]").text
+        job_details['job_title'] = job_title
+
+        # Scrape company name
+        company_name = driver.find_element(By.XPATH, "//p[contains(@class, 'text-sm') and contains(@class, 'text-base')]").text
+        job_details['company_name'] = company_name
+
+        # Scrape location
+        location = driver.find_element(By.XPATH, "//div[@title='Location']/p").text
+        job_details['location'] = location
+
+        # Scrape years of experience
+        experience = driver.find_element(By.XPATH, "//div[@title='Years of Experience']/p").text
+        job_details['experience'] = experience
+
+        # Scrape job type
+        job_type = driver.find_element(By.XPATH, "//div[@title='Job Type']/p").text
+        job_details['job_type'] = job_type
+
+        # Scrape posted date and deadline
+        posted_date = driver.find_element(By.XPATH, "//p[@title='Posted Date']").text
+        deadline_date = driver.find_element(By.XPATH, "//p[@title='Expiration Date']").text
+        job_details['posted_date'] = posted_date
+        job_details['deadline_date'] = deadline_date
+
+        # Scrape job description
+        job_description = driver.find_element(By.ID, "job_description").text
+        job_details['job_description'] = job_description
+
+        # Close the driver
+        driver.quit()
+
+        return job_details
+    except Exception as e:
+        print(f"Error fetching or scraping the job detail page: {e}")
+        driver.quit()
+        return {}
+
+
+
 def scrape_sector_detail_page(url, retries=0):
     try:
         # Setup WebDriver options
         options = Options()
         options.add_argument("--no-sandbox")
         options.add_argument("--disable-dev-shm-usage")
-        options.headless = True  # Run in headless mode
+        options.headless = False  # Set to True for headless mode
         options.add_argument("--window-size=1920,1000")
         options.add_argument("--disable-gpu")
 
@@ -32,7 +114,7 @@ def scrape_sector_detail_page(url, retries=0):
         jobs = driver.find_elements(By.CSS_SELECTOR, 'div.grid.grid-cols-1 > div')
         job_list = []
 
-        for job in jobs:
+        for job_index, job in enumerate(jobs):
             try:
                 title_element = job.find_element(By.CSS_SELECTOR, 'div.text-center.md\\:text-start > h3')
                 company_element = job.find_element(By.CSS_SELECTOR, 'div.flex.flex-col.items-center.justify-start > p')
@@ -48,36 +130,18 @@ def scrape_sector_detail_page(url, retries=0):
                 job_type = type_element.text
                 positions = positions_element.text
 
-                # Click the "Read More" button using JavaScript
-                read_more_button = job.find_element(By.XPATH, ".//button[contains(., 'Read More')]")
-                driver.execute_script("arguments[0].click();", read_more_button)
+                job_details = scrape_job_detail_page(url, job_index)
 
-                # Wait for the detailed job description to load
-                WebDriverWait(driver, 10).until(
-                    EC.presence_of_element_located((By.CSS_SELECTOR, 'div#job_description'))
-                )
-
-                # Scrape the detailed job description
-                job_description_element = driver.find_element(By.CSS_SELECTOR, 'div#job_description')
-                job_description = job_description_element.text
-
-                job_list.append({
+                job_details = {
                     'Title': title,
                     'Company': company,
                     'Location': location,
                     'Experience': experience,
                     'Type': job_type,
-                    'Positions': positions,
-                    'Job Description': job_description
-                })
+                    'Positions': positions
+                }
 
-                # Navigate back to the sector page
-                driver.back()
-
-                # Wait for the main job container to load again
-                WebDriverWait(driver, 20).until(
-                    EC.presence_of_element_located((By.CSS_SELECTOR, 'div.grid.grid-cols-1'))
-                )
+                job_list.append(job_details)
 
             except Exception as e:
                 print(f"Error extracting job details: {e}")
@@ -94,6 +158,7 @@ def scrape_sector_detail_page(url, retries=0):
             return scrape_sector_detail_page(url, retries + 1)
         else:
             print("Max retries reached. Exiting.")
+            driver.quit()
             return []
 
 def scrape_web_page():
@@ -119,7 +184,7 @@ def scrape_web_page():
         sectors = driver.find_elements(By.CSS_SELECTOR, 'section#sectors div.grid > div')
 
         job_sectors = []
-        for sector in sectors:
+        for sector in sectors[:1]:
             try:
                 link_element = sector.find_element(By.TAG_NAME, 'a')
                 title_element = sector.find_element(By.CSS_SELECTOR, 'div.text-center > p.font-body')
