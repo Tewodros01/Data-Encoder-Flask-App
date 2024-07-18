@@ -7,6 +7,9 @@ from selenium.webdriver.support import expected_conditions as EC
 from webdriver_manager.chrome import ChromeDriverManager
 import time
 
+from hahujobNormilizer import save_to_excel
+
+
 def scrape_job_detail_page(sector_url , job_index):
     try:
         # Setup WebDriver options
@@ -75,13 +78,13 @@ def scrape_job_detail_page(sector_url , job_index):
         posted_date = driver.find_element(By.XPATH, "//p[@title='Posted Date']").text
         deadline_date = driver.find_element(By.XPATH, "//p[@title='Expiration Date']").text
         job_details['posted_date'] = posted_date
-        job_details['deadline_date'] = deadline_date
+        job_details['application_deadline'] = deadline_date
 
         # Scrape job description
         job_description = driver.find_element(By.ID, "job_description").text
         job_details['job_description'] = job_description
 
-        job_details['application_url'] = new_url
+        job_details['job_apply_url'] = new_url
 
 
         # Close the driver
@@ -226,6 +229,8 @@ def scrape_web_page():
 
         # Close the driver
         driver.quit()
+
+        save_to_excel(all_jobs)
 
     except Exception as e:
         print(f"Error fetching or scraping the web page: {e}")
