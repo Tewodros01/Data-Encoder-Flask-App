@@ -93,7 +93,6 @@ category_urls = [
     # "https://ethiojobs.net/jobs?search=Water+and+Sanitation&page=1"
 ]
 
-
 def scrape_jobs_by_category(category_url):
     driver = webdriver.Chrome()
     driver.get(category_url)
@@ -168,6 +167,7 @@ def scrape_job_details(job_url):
     driver = webdriver.Chrome()
     driver.get(job_url)
     WebDriverWait(driver, 120).until(lambda driver: driver.execute_script('return document.readyState') == 'complete')
+
     job_details = {}
 
     try:
@@ -177,67 +177,83 @@ def scrape_job_details(job_url):
             driver.quit()
             return job_details
 
-        # Wait for specific elements to load
-        WebDriverWait(driver, 120).until(
-            EC.presence_of_element_located((By.CSS_SELECTOR, 'div.MuiGrid-item.MuiGrid-grid-xs-12 p'))
+        # Wait and extract job title
+        job_title = WebDriverWait(driver, 20).until(
+            EC.presence_of_element_located((By.CSS_SELECTOR, "div.headerListing p[style*='font-size: 38px']"))
+        ).text
+        job_details['job_title'] = job_title
+
+        # Wait and extract listing ID
+        listing_id = WebDriverWait(driver, 20).until(
+            EC.presence_of_element_located((By.CSS_SELECTOR, "div.headerListing p[style*='font-size: 18px']"))
+        ).text.split(" - ")[1]
+        job_details['listing_id'] = listing_id
+
+        # Wait and extract location
+        location = WebDriverWait(driver, 20).until(
+            EC.presence_of_element_located((By.CSS_SELECTOR, "div.headerListing div[style*='padding-top: 25px'] p"))
+        ).text
+        job_details['location'] = location
+
+        # Wait and extract company logo URL
+        logo_url = WebDriverWait(driver, 20).until(
+            EC.presence_of_element_located((By.CSS_SELECTOR, "div.logo img"))
+        ).get_attribute('src')
+        job_details['company_logo_url'] = logo_url
+
+        # Wait and extract job category
+        job_category = WebDriverWait(driver, 20).until(
+            EC.presence_of_element_located((By.CSS_SELECTOR, "div.MuiChip-root span"))
+        ).text
+        job_details['job_category'] = job_category
+
+
+
+        # Wait and extract sidebar details
+        sidebar = WebDriverWait(driver, 20).until(
+            EC.presence_of_element_located((By.ID, "sidebar"))
         )
+        details = sidebar.find_elements(By.TAG_NAME, "li")
+
+        for detail in details:
+            text = detail.text.split(": ")
+            if len(text) == 2:
+                key, value = text
+                if key.strip() == 'Location Type':
+                    job_details['location_type'] = value.strip()
+                elif key.strip() == 'Deadline':
+                    job_details['deadline'] = value.strip()
+                elif key.strip() == 'Career Level':
+                    job_details['career_level'] = value.strip()
+                elif key.strip() == 'Employment Type':
+                    job_details['employment_type'] = value.strip()
+                elif key.strip() == 'Number of people required':
+                    job_details['number_of_people_required'] = value.strip()
+                elif key.strip() == 'Work Experience':
+                    job_details['work_experience'] = value.strip()
+
+        # Wait and extract job description and other information
+        description_section = WebDriverWait(driver, 20).until(
+            EC.presence_of_element_located((By.TAG_NAME, "main"))
+        )
+        job_description = description_section.find_element(By.CSS_SELECTOR, "div[style*='margin-top: 20%'] p").text
+        job_details['job_description'] = job_description
 
         about_job = driver.find_element(By.CSS_SELECTOR, 'div.MuiGrid-item.MuiGrid-grid-xs-12 p.MuiTypography-root.MuiTypography-body1.mui-style-17sbmss').text
         about_you = driver.find_element(By.CSS_SELECTOR, 'div.MuiGrid-item.MuiGrid-grid-xs-12 p.MuiTypography-root.MuiTypography-body1.mui-style-pdximt').text
         required_skills = driver.find_element(By.CSS_SELECTOR, 'div.MuiGrid-item.MuiGrid-grid-xs-12 ul.MuiList-root.MuiList-padding').text
         how_to_apply = driver.find_element(By.CSS_SELECTOR, 'div.MuiGrid-item.MuiGrid-grid-xs-12 p.MuiTypography-root.MuiTypography-body1.mui-style-pdximt').text
 
-        job_details["job_description"] = f"about_job: {about_job}\nabout_you: {about_you}\nrequired_skills: {required_skills}\nhow_to_apply: {how_to_apply}"
-        # Ensure the sidebar is fully loaded
-        sidebar = WebDriverWait(driver, 30).until(
-            EC.presence_of_element_located((By.ID, "sidebar"))
-        )
+        job_details["job_description"] = f"About Job\n {about_job}\nAbout You\n {about_you}\n Required Skills\n {required_skills}\nHow To Apply\n {how_to_apply}"
 
-        try:
-            job_details['employment_type'] = sidebar.find_element(By.XPATH, ".//p[contains(text(), 'Employment Type')]/following-sibling::p").text
-        except NoSuchElementException:
-            job_details['employment_type'] = "N/A"
-            print("Employment Type element not found")
 
-        try:
-            job_details['work_experience'] = sidebar.find_element(By.XPATH, ".//p[contains(text(), 'Work Experience')]/following-sibling::p").text
-        except NoSuchElementException:
-            job_details['work_experience'] = "N/A"
-            print("Work Experience element not found")
-
-        # try:
-        #     job_details['deadline'] = sidebar.find_element(By.XPATH, ".//p[contains(text(), 'Deadline')]/following-sibling::p").text
-        # except NoSuchElementException:
-        #     job_details['deadline'] = "N/A"
-        #     print("Deadline element not found")
-
-        try:
-            job_details['career_level'] = sidebar.find_element(By.XPATH, ".//p[contains(text(), 'Career Level')]/following-sibling::p").text
-        except NoSuchElementException:
-            job_details['career_level'] = "N/A"
-            print("Career Level element not found")
-
-        try:
-            job_details['number_of_people_required'] = sidebar.find_element(By.XPATH, ".//p[contains(text(), 'Number of people required')]/following-sibling::p").text
-        except NoSuchElementException:
-            job_details['number_of_people_required'] = "N/A"
-            print("Number of people required element not found")
-
-        try:
-            job_details['location_type'] = sidebar.find_element(By.XPATH, ".//p[contains(text(), 'Location Type')]/following-sibling::p").text
-        except NoSuchElementException:
-            job_details['location_type'] = "N/A"
-            print("Location Type element not found")
-
-    except NoSuchElementException as e:
-        print(f"Error parsing job details: {e}")
-    except TimeoutException as e:
-        print(f"Timeout waiting for elements to load: {e}")
     except Exception as e:
-        print(f"An unexpected error occurred while parsing job details: {e}")
+        print(f"An error occurred: {e}")
+    finally:
+        driver.quit()
 
-    driver.quit()
     return job_details
+
 
 def main():
     all_jobs_by_category = []
