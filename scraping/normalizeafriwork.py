@@ -83,10 +83,10 @@ def normalize_job_type(job_type):
     return job_type_mapping.get(job_type, "Unknown Job Type")
 
 
-def normalize_and_save_jobs(job_sectors):
+def normalize_and_save_jobs(all_jobs):
     all_job_listings = []
 
-    for sector in job_sectors:
+    for sector in all_jobs:
         if 'joblist' in sector and sector['joblist']:
             for job in sector['joblist']:
                 # Skip jobs with company name "Private Client"

@@ -1,9 +1,6 @@
-import xlsxwriter
+import pandas as pd
 from datetime import datetime
 import json
-
-from database_operations import job_exists
-
 
 class NormalizedJob:
     def __init__(self, id=None, post_date=None, email=None, password=None, company_name=None, company_logo=None,
@@ -152,9 +149,6 @@ def get_current_date_time_string():
 
 
 def save_to_excel(job_sectors):
-    workbook = xlsxwriter.Workbook(f'EthioJobJobListings_{get_current_date_time_string()}.xlsx')
-    worksheet = workbook.add_worksheet("All Job Listings")
-
     all_job_listings = []
 
     for sector in job_sectors:
@@ -163,42 +157,31 @@ def save_to_excel(job_sectors):
                 normalized_job = NormalizedJob(
                     id=job.get('id'),
                     post_date=job.get('posted_date'),
-                    email=None,
-                    password=None,
+                    email='',
+                    password='',
                     company_name=job.get('company_name'),
                     company_logo=job.get('company_logo'),
-                    job_sector=normalize_sector(sector.get('sector_name')),
+                    job_sector=normalize_sector(sector.get('job_sector')),
                     job_title=job.get('job_title'),
                     job_description=job.get('job_description'),
-                    application_deadline=job.get('application_deadline'),
+                    application_deadline=job.get('deadline'),
                     job_type=normalize_job_type(job.get('employment_type')),
-                    skills=job.get('job_requirements'),
+                    skills=job.get('required_skills'),
                     job_apply_type="external",
-                    job_apply_url=job.get('detail_url'),
+                    job_apply_url=job.get('job_url'),
                     min_salary=job.get('salary'),
-                    experience=normalize_experience(job.get('job_level')),
-                    career_level=normalize_career_level(job.get('job_level')),
+                    experience=normalize_experience(job.get('experience')),
+                    career_level=normalize_career_level(job.get('career_level')),
                     unique_job_id=job.get('unique_job_id'),
-                    detail_url=job.get('detail_url')
+                    detail_url=job.get('job_url')
                 )
 
-                if job_exists(normalized_job):
-                    print("Job Alredy Exit")
-                else:
-                    all_job_listings.append(normalized_job)
+                all_job_listings.append(normalized_job)
 
-    # all_job_listings_dict = [vars(job) for job in all_job_listings]
-    # print(f"All Job Listings: {json.dumps(all_job_listings_dict, indent=4)}")
+    job_dicts = [vars(job) for job in all_job_listings]
+    df = pd.DataFrame(job_dicts)
 
-    headers = [attr for attr in dir(NormalizedJob) if not callable(getattr(NormalizedJob, attr)) and not attr.startswith("__")]
-    for col_num, header in enumerate(headers):
-        worksheet.write(0, col_num, header)
-
-    for row_num, job in enumerate(all_job_listings, 1):
-        for col_num, header in enumerate(headers):
-            worksheet.write(row_num, col_num, getattr(job, header) or "")
-
-    worksheet.set_column(0, len(headers) - 1, 20)
-    workbook.close()
-    print(f"Data saved to EthioJobJobListings_{get_current_date_time_string()}.xlsx")
+    file_name = f'EthioJobJobListings_{get_current_date_time_string()}.xlsx'
+    df.to_excel(file_name, index=False)
+    print(f"Data saved to {file_name}")
 

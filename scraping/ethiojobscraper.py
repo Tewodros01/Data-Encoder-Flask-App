@@ -97,11 +97,26 @@ category_urls = [
 def scrape_jobs_by_category(category_url):
     driver = webdriver.Chrome()
     driver.get(category_url)
-    WebDriverWait(driver, 120).until(lambda driver: driver.execute_script('return document.readyState') == 'complete')
+
+    try:
+        # Wait for the page to fully load
+        WebDriverWait(driver, 120).until(
+            lambda driver: driver.execute_script('return document.readyState') == 'complete'
+        )
+        # Additional wait to handle splash screen or dynamic loading elements
+        time.sleep(10)
+        # Wait until the specific job container div is present
+        WebDriverWait(driver, 120).until(
+            EC.presence_of_element_located((By.CSS_SELECTOR, '.MuiGrid-root.MuiGrid-container.MuiGrid-spacing-xs-2.mui-style-isbt42'))
+        )
+    except TimeoutException:
+        print("Page load timed out.")
+        driver.quit()
+        return []
+
     jobs = []
 
     try:
-        time.sleep(10)
         job_cards = WebDriverWait(driver, 120).until(
             EC.presence_of_all_elements_located((By.CSS_SELECTOR, '.jobcardcontainer .MuiPaper-root'))
         )
@@ -126,7 +141,6 @@ def scrape_jobs_by_category(category_url):
                         break
 
                 job_details = scrape_job_details(job_url)
-
                 jobs.append({
                     'job_title': job_title,
                     'company_name': company_name,
@@ -141,7 +155,7 @@ def scrape_jobs_by_category(category_url):
                 retry_count -= 1
                 print("StaleElementReferenceException encountered. Retrying...")
             except NoSuchElementException as e:
-                print(f"Error parsing job card: {e}")
+                print(f"Error parsing job card retry")
                 break
             except Exception as e:
                 print(f"An unexpected error occurred: {e}")
@@ -168,11 +182,12 @@ def scrape_job_details(job_url):
             EC.presence_of_element_located((By.CSS_SELECTOR, 'div.MuiGrid-item.MuiGrid-grid-xs-12 p'))
         )
 
-        job_details['about_job'] = driver.find_element(By.CSS_SELECTOR, 'div.MuiGrid-item.MuiGrid-grid-xs-12 p.MuiTypography-root.MuiTypography-body1.mui-style-17sbmss').text
-        job_details['about_you'] = driver.find_element(By.CSS_SELECTOR, 'div.MuiGrid-item.MuiGrid-grid-xs-12 p.MuiTypography-root.MuiTypography-body1.mui-style-pdximt').text
-        job_details['required_skills'] = driver.find_element(By.CSS_SELECTOR, 'div.MuiGrid-item.MuiGrid-grid-xs-12 ul.MuiList-root.MuiList-padding').text
-        job_details['how_to_apply'] = driver.find_element(By.CSS_SELECTOR, 'div.MuiGrid-item.MuiGrid-grid-xs-12 p.MuiTypography-root.MuiTypography-body1.mui-style-pdximt').text
+        about_job = driver.find_element(By.CSS_SELECTOR, 'div.MuiGrid-item.MuiGrid-grid-xs-12 p.MuiTypography-root.MuiTypography-body1.mui-style-17sbmss').text
+        about_you = driver.find_element(By.CSS_SELECTOR, 'div.MuiGrid-item.MuiGrid-grid-xs-12 p.MuiTypography-root.MuiTypography-body1.mui-style-pdximt').text
+        required_skills = driver.find_element(By.CSS_SELECTOR, 'div.MuiGrid-item.MuiGrid-grid-xs-12 ul.MuiList-root.MuiList-padding').text
+        how_to_apply = driver.find_element(By.CSS_SELECTOR, 'div.MuiGrid-item.MuiGrid-grid-xs-12 p.MuiTypography-root.MuiTypography-body1.mui-style-pdximt').text
 
+        job_details["job_description"] = f"about_job: {about_job}\nabout_you: {about_you}\nrequired_skills: {required_skills}\nhow_to_apply: {how_to_apply}"
         # Ensure the sidebar is fully loaded
         sidebar = WebDriverWait(driver, 30).until(
             EC.presence_of_element_located((By.ID, "sidebar"))
@@ -190,11 +205,11 @@ def scrape_job_details(job_url):
             job_details['work_experience'] = "N/A"
             print("Work Experience element not found")
 
-        try:
-            job_details['deadline'] = sidebar.find_element(By.XPATH, ".//p[contains(text(), 'Deadline')]/following-sibling::p").text
-        except NoSuchElementException:
-            job_details['deadline'] = "N/A"
-            print("Deadline element not found")
+        # try:
+        #     job_details['deadline'] = sidebar.find_element(By.XPATH, ".//p[contains(text(), 'Deadline')]/following-sibling::p").text
+        # except NoSuchElementException:
+        #     job_details['deadline'] = "N/A"
+        #     print("Deadline element not found")
 
         try:
             job_details['career_level'] = sidebar.find_element(By.XPATH, ".//p[contains(text(), 'Career Level')]/following-sibling::p").text
