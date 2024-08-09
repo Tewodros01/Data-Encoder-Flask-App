@@ -53,7 +53,7 @@ predefinedSectors = [
 
 category_urls = [
     "https://ethiojobs.net/jobs?search=Accounting+and+Finance&page=1",
-    # "https://ethiojobs.net/jobs?search=Admin%2C+Secretarial%2C+and+Clerical&page=1",
+    "https://ethiojobs.net/jobs?search=Admin%2C+Secretarial%2C+and+Clerical&page=1",
     # "https://ethiojobs.net/jobs?search=Agriculture&page=1",
     # "https://ethiojobs.net/jobs?search=Architecture+and+Construction&page=1",
     # "https://ethiojobs.net/jobs?search=Automotive&page=1",

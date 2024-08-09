@@ -15,7 +15,7 @@ from normalizeafriwork import normalize_and_save_jobs
 def login(driver, email, password):
     driver.get("https://afriworket.com/login")
     WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.CSS_SELECTOR, 'input[placeholder="Username or Email"]')))
-    driver.find_element(By.CSS_SELECTOR, 'input[placeholder="Username or Email"]').send_keys(email)
+    driver.find_element(By.CSS_SELECTOR, 'input[placeholder="you@example.com"]').send_keys(email)
     driver.find_element(By.CSS_SELECTOR, 'input[placeholder="password"]').send_keys(password)
     driver.find_element(By.CSS_SELECTOR, 'button[type="submit"]').click()
     WebDriverWait(driver, 10).until(EC.url_changes("https://afriworket.com/login"))
